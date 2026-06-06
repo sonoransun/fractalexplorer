@@ -141,6 +141,12 @@ body {
   display: flex;
   gap: 0.16em;
   align-items: center;
+  cursor: pointer;
+}
+.brand:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 .brand-logo {
   width: 27px;
@@ -571,60 +577,124 @@ button.btn:hover {
   color: var(--amber);
 }
 
-/* ---- onboarding hint ----------------------------------------------------- */
-#hint {
+/* ---- welcome / context overlay ------------------------------------------- */
+/* A light scrim so the live Mandelbrot dive stays visible behind the card. */
+.welcome-scrim {
   position: fixed;
-  left: 50%;
-  bottom: 26px;
-  transform: translateX(-50%) translateY(8px);
-  z-index: 5;
-  display: none;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 12px 10px 16px;
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
-  border: 1px solid var(--hair);
-  border-radius: 999px;
-  box-shadow: var(--shadow);
-  font-size: 12.5px;
-  color: var(--ink-dim);
+  inset: 0;
+  z-index: 18;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(58% 58% at 50% 50%, rgba(4, 4, 6, 0.62), rgba(4, 4, 6, 0.24) 100%);
   opacity: 0;
-  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+  animation: fade 0.4s var(--ease) forwards;
 }
-#hint.show {
-  display: flex;
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.welcome-scrim.out {
+  animation: welcomeOut 0.26s var(--ease) forwards;
 }
-#hint .keys {
+@keyframes welcomeOut {
+  to { opacity: 0; }
+}
+.welcome-card {
+  position: relative;
+  width: min(540px, 100%);
+  background: linear-gradient(180deg, rgba(20, 21, 27, 0.95), rgba(11, 12, 16, 0.97));
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 40px clamp(24px, 5vw, 48px) 36px;
+  transform: translateY(14px);
+  animation: rise 0.42s var(--ease) forwards;
+}
+.welcome-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 14px;
+}
+.welcome-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(40px, 8vw, 62px);
+  line-height: 1;
+  margin: 0 0 16px;
   color: var(--ink);
 }
-#hint .hint-tour {
-  background: var(--amber-soft);
-  color: var(--amber-bright);
-  border: 1px solid transparent;
+.welcome-title em {
+  font-style: italic;
+  color: var(--amber);
+}
+.welcome-lede {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-dim);
+  margin: 0 0 16px;
+  max-width: 46ch;
+}
+.welcome-lede .mono {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.welcome-controls {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin: 0 0 26px;
+}
+.welcome-controls kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hair);
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: var(--ink);
+}
+.welcome-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.welcome-cta {
+  background: var(--amber);
+  color: var(--space-0);
+  border: none;
   border-radius: 999px;
-  padding: 5px 12px;
+  padding: 12px 26px;
   font: inherit;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  box-shadow: 0 10px 30px -10px rgba(242, 179, 94, 0.5);
+  transition: transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
 }
-#hint .hint-tour:hover {
-  border-color: var(--amber);
+.welcome-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 38px -10px rgba(242, 179, 94, 0.62);
 }
-#hint .hint-x {
+.welcome-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+.welcome-history {
   background: none;
   border: none;
-  color: var(--ink-faint);
-  font-size: 16px;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
-  line-height: 1;
-  padding: 0 2px;
+  padding: 4px 0;
 }
-#hint .hint-x:hover {
-  color: var(--ink);
+.welcome-history:hover {
+  color: var(--amber);
+}
+.welcome-cta:focus-visible,
+.welcome-history:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
 }
 
 /* ---- toast --------------------------------------------------------------- */
@@ -855,10 +925,6 @@ button.btn:hover {
     font-size: 10px;
     padding: 6px 9px;
   }
-  #hint {
-    width: calc(100% - 32px);
-    justify-content: center;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -870,6 +936,8 @@ button.btn:hover {
     animation: none;
   }
   #topbar, #panel, #hud, .toast, .modal, .modal-scrim { animation: none; }
+  .welcome-scrim { animation: none; opacity: 1; }
+  .welcome-card { animation: none; transform: none; }
 }
 
 /* ============================================================================
@@ -996,20 +1064,12 @@ button.btn:focus-visible,
   .swatch { height: 36px; }
 }
 
-/* phones: keep the HUD / hint / toast clear of the bottom sheet */
+/* phones: keep the HUD / toast clear of the bottom sheet */
 @media (max-width: 640px) {
   #hud {
     top: calc(58px + env(safe-area-inset-top));
     left: 12px;
     bottom: auto;
-  }
-  #hint {
-    top: calc(56px + env(safe-area-inset-top));
-    bottom: auto;
-    transform: translateX(-50%);
-  }
-  #hint.show {
-    transform: translateX(-50%);
   }
   #toast-root {
     top: calc(104px + env(safe-area-inset-top));

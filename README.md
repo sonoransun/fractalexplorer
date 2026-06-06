@@ -32,8 +32,9 @@ rendering framework. The bundle is ~14 kB gzipped.
 - **Shareable state & export** — the URL hash is the single source of truth
   ("Copy link" deep-links the exact view); plus one-click **PNG export** and Web
   Share on mobile.
-- **In-app About** — an overlay with the history of fractals and their
-  significance (the long-form lives in [`docs/fractals.md`](docs/fractals.md)).
+- **Guided start** — first-time visitors get a welcome overlay explaining the
+  Mandelbrot set while the view is already diving in; it links to an in-app
+  **About** with the history of fractals (long-form in [`docs/fractals.md`](docs/fractals.md)).
 - **Polished, responsive UI** — an immersive dark "observatory" design; the
   control panel becomes a bottom sheet on phones; keyboard shortcuts throughout.
 
@@ -64,7 +65,7 @@ npm run e2e        # headless WebGL2 smoke test (requires Playwright + chromium)
 | Reset view | `R` |
 | Copy deep-link | `C` |
 | Save PNG | `S` |
-| About | `?` |
+| Welcome / About | `?` (or click the title) |
 | Toggle panel | `Tab` or the floating button |
 
 ## Mathematics & history

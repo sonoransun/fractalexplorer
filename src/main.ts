@@ -18,7 +18,7 @@ import { attachInput } from './app/input';
 import { createPanel } from './ui/panel';
 import { createTopbar, type TopbarHandle } from './ui/topbar';
 import { openAbout } from './ui/about';
-import { createHint } from './ui/hint';
+import { openWelcome, maybeOpenWelcome } from './ui/welcome';
 import { attachShortcuts } from './ui/shortcuts';
 import { toast } from './ui/toast';
 import { saveCanvasPng, shareCanvas } from './export/image';
@@ -82,6 +82,8 @@ if (!engine.ok) {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen();
   };
+  // Welcome (friendly context) -> About (deep history).
+  const showWelcome = () => openWelcome(openAbout);
 
   const panel = createPanel(engine, onChange);
   let topbar: TopbarHandle;
@@ -97,7 +99,7 @@ if (!engine.ok) {
 
   topbar = createTopbar({
     onTour: toggleTour,
-    onAbout: openAbout,
+    onAbout: showWelcome,
     onSave: doSave,
     onShare: doShare,
     onFullscreen: doFullscreen,
@@ -105,15 +107,24 @@ if (!engine.ok) {
 
   attachInput(canvas, engine, onChange);
 
-  const hint = createHint(() => {
-    engine.startTour();
-    panel.rebuild();
-    topbar.setTourActive(true);
-  });
+  // The brand reopens the welcome/context view.
+  const brand = document.querySelector('.brand') as HTMLElement | null;
+  if (brand) {
+    brand.setAttribute('role', 'button');
+    brand.setAttribute('tabindex', '0');
+    brand.setAttribute('aria-label', 'About this explorer');
+    brand.addEventListener('click', showWelcome);
+    brand.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        showWelcome();
+      }
+    });
+  }
 
   attachShortcuts({
     tour: toggleTour,
-    about: openAbout,
+    about: showWelcome,
     fullscreen: doFullscreen,
     reset: () => {
       engine.resetView();
@@ -185,7 +196,11 @@ if (!engine.ok) {
     engine.startTour();
     topbar.setTourActive(true);
   }
-  hint.maybeShow();
+  // First-time visitors to the default view get the welcome/context overlay over
+  // the live zoom. Deep-link arrivals go straight to their shared view.
+  if (!hadDeepLink) {
+    maybeOpenWelcome(openAbout);
+  }
 
   new Loop(engine).start();
 }

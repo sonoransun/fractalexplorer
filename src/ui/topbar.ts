@@ -30,7 +30,7 @@ export const createTopbar = (actions: TopbarActions): TopbarHandle => {
   };
 
   const tourBtn = mk(ICONS.play, 'Toggle tour', 'Tour (Space)', actions.onTour);
-  mk(ICONS.info, 'About fractals', 'About (?)', actions.onAbout);
+  mk(ICONS.info, 'About this explorer', 'About (?)', actions.onAbout);
   mk(ICONS.save, 'Save image', 'Save PNG (S)', actions.onSave);
   if (typeof navigator !== 'undefined' && 'share' in navigator) {
     mk(ICONS.share, 'Share', 'Share image', actions.onShare);
