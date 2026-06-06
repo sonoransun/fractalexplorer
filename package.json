@@ -1,0 +1,27 @@
+{
+  "name": "fractal-explorer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Browser-based, hardware-accelerated explorer for Mandelbrot, Julia, and self-similar fractals with animated color palettes.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "vite preview --port 4173 & sleep 2 && node scripts/verify-headless.mjs; kill %1 2>/dev/null"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0",
+    "typescript": "~5.4.5",
+    "vite": "~5.4.10",
+    "vitest": "~1.6.1"
+  },
+  "dependencies": {
+    "@fontsource/hanken-grotesk": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/instrument-serif": "^5.2.8"
+  }
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#07070a" />
+    <meta name="description" content="An immersive, hardware-accelerated explorer for the Mandelbrot set, Julia sets, and other self-similar fractals — animated and color-cycled." />
+    <title>Fractal Explorer</title>
+  </head>
+  <body>
+    <!-- film grain + vignette atmosphere -->
+    <div id="grain" aria-hidden="true"></div>
+
+    <!-- the fragment shaders draw here; touch-action:none lets us own pinch/drag -->
+    <canvas id="view" aria-label="Fractal viewport"></canvas>
+
+    <header id="topbar">
+      <div class="brand">
+        <span class="brand-mark">Fractal</span><span class="brand-mark brand-em">Explorer</span>
+      </div>
+      <nav id="topbar-actions" class="topbar-actions" aria-label="Actions"></nav>
+    </header>
+
+    <aside id="panel" aria-label="Controls"></aside>
+    <button id="panel-toggle" type="button" aria-label="Show controls" title="Controls">
+      <span class="dotgrid" aria-hidden="true"></span>
+    </button>
+
+    <div id="hud" role="status" aria-live="off"></div>
+    <div id="hint" aria-hidden="true"></div>
+    <div id="about-root"></div>
+    <div id="toast-root" aria-live="polite"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
