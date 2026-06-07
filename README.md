@@ -8,6 +8,10 @@ structures.
 Built with vanilla **TypeScript + Vite** and hand-written **WebGL2** shaders; no
 rendering framework. The bundle is ~14 kB gzipped.
 
+<a href="https://fractalexplorer.org/"><b>Begin your journey at FractalExplorer.org!</b></a>
+<br />
+<br />
+
 ## What's inside
 
 - **Escape-time fractals** — Mandelbrot, Julia, and Multibrot, with continuous
