@@ -1,123 +1,114 @@
-// Headless smoke test (Chromium/SwiftShader): verifies WebGL2 + shader compilation,
-// self-hosted fonts, the first-visit welcome overlay (over a live Mandelbrot zoom),
-// Begin-exploring dismissal, reopen + history → About, tour cancel-on-interaction,
-// PNG export, and renders at desktop / mobile / landscape.
+// Headless smoke test for the routed app (Chromium/SwiftShader): Home landing
+// (live hero, gallery, formulas), navigation into the Explorer via the hero CTA /
+// a gallery card / a formula deep-link (lands on the right magnification), the
+// History page, brand→Home, favicon, fonts, and the removed boot-fallback.
 import { chromium } from 'playwright';
 
-const URL = process.env.URL || 'http://localhost:4173/';
+const BASE = process.env.URL || 'http://localhost:4173/';
 const errors = [];
 
 const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'],
 });
-
 const wire = (p) => {
   p.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   p.on('pageerror', (e) => errors.push('pageerror: ' + (e.stack || e.message)));
   return p;
 };
 
-const page = wire(await browser.newPage({ viewport: { width: 1280, height: 800 }, acceptDownloads: true }));
+const page = wire(await browser.newPage({ viewport: { width: 1280, height: 800 } }));
+const count = (sel) => page.locator(sel).count();
 const has = (sel) => page.evaluate((s) => !!document.querySelector(s), sel);
-const mag = () =>
-  page.evaluate(() => {
-    const t = document.getElementById('hud').textContent || '';
-    const m = t.match(/×([0-9.eE+\-]+)/);
-    return m ? parseFloat(m[1]) : NaN;
-  });
+const route = () => page.evaluate(() => [...document.body.classList].find((c) => c.startsWith('route-')) || '');
+const mag = () => page.evaluate(() => {
+  const t = document.getElementById('hud').textContent || '';
+  const m = t.match(/×([0-9.eE+\-]+)/);
+  return m ? parseFloat(m[1]) : NaN;
+});
 
-await page.goto(URL, { waitUntil: 'load' });
+await page.goto(`${BASE}#/`, { waitUntil: 'load' });
 await page.waitForTimeout(900);
 
 const env = await page.evaluate(() => {
   const c = document.getElementById('view');
   const gl = c.getContext('webgl2');
-  return { hasWebGL2: !!gl, floatExt: gl ? !!gl.getExtension('EXT_color_buffer_float') : false, backing: [c.width, c.height] };
+  return { hasWebGL2: !!gl, floatExt: gl ? !!gl.getExtension('EXT_color_buffer_float') : false };
 });
 const fontsOk = await page.evaluate(async () => {
   await document.fonts.ready;
   return document.fonts.check('16px "Instrument Serif"') && document.fonts.check('16px "Hanken Grotesk"');
 });
-const panelDuplicatesBrand = await page.evaluate(() =>
-  (document.getElementById('panel')?.textContent || '').includes('Fractal Explorer'),
-);
+const bootFallbackRemoved = !(await has('#boot-fallback'));
+const faviconOk = (await page.request.get(new URL('favicon.svg', BASE).href)).ok();
 
-// 1) First-visit welcome is shown over the live, zooming Mandelbrot.
-const welcomeShown = await has('.welcome-scrim');
-const m1 = await mag();
-await page.waitForTimeout(2600);
-const m2 = await mag();
-const tourRunning = Number.isFinite(m1) && Number.isFinite(m2) && Math.abs(m2 - m1) > 1e-3;
-await page.screenshot({ path: '/tmp/shot-desktop.png' }); // welcome over the live zoom
+// 1) Home: route, hero, gallery (11 kinds), formula links (16 presets), live hero.
+const homeRoute = (await route()) === 'route-home';
+const heroPresent = await has('.hero-title');
+const galleryCount = await count('.gcard');
+const formulaCount = await count('.formula-link');
+const heroLive = await page.evaluate(() => new Promise((resolve) => {
+  const c = document.getElementById('view');
+  const gl = c.getContext('webgl2');
+  let best = 0, n = 0;
+  const tick = () => {
+    const px = new Uint8Array(c.width * c.height * 4);
+    gl.readPixels(0, 0, c.width, c.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    let col = 0;
+    for (let i = 0; i < px.length; i += 4) if (px[i] > 8 || px[i + 1] > 8 || px[i + 2] > 8) col++;
+    best = Math.max(best, col / (c.width * c.height));
+    if (++n < 5) requestAnimationFrame(tick); else resolve(best > 0.02);
+  };
+  requestAnimationFrame(tick);
+}));
+await page.screenshot({ path: '/tmp/shot-home.png' });
 
-// 2) "Begin exploring" dismisses; the tour keeps going.
-await page.click('.welcome-cta');
-await page.waitForTimeout(300);
-const welcomeDismissed = !(await has('.welcome-scrim'));
-const m3 = await mag();
+// 2) Hero CTA -> Explorer (chrome appears).
+await page.click('.hero-cta');
+await page.waitForTimeout(700);
+const enteredExplorer = (await route()) === 'route-explore' && (await page.locator('#topbar').isVisible());
+await page.screenshot({ path: '/tmp/shot-explorer.png' });
+
+// 3) Brand -> Home, then a formula deep-link lands on the right magnification.
+await page.click('.brand');
+await page.waitForTimeout(400);
+const brandHome = (await route()) === 'route-home';
+await page.click('.formula-link >> nth=0'); // Seahorse Valley, ×250
 await page.waitForTimeout(1200);
-const tourContinues = Math.abs((await mag()) - m3) > 1e-3;
+const presetMag = await mag();
+const presetOk = (await route()) === 'route-explore' && Math.abs(presetMag - 250) / 250 < 0.2;
 
-// 3) Interaction cancels the tour.
-await page.mouse.move(600, 400);
-await page.mouse.wheel(0, -150);
+// 4) Gallery card -> Explorer (a non-escape kind).
+await page.click('.brand');
+await page.waitForTimeout(300);
+await page.click('.gcard[aria-label="Barnsley fern"]');
 await page.waitForTimeout(900);
-const m4 = await mag();
-await page.waitForTimeout(1000);
-const tourStopped = Math.abs((await mag()) - m4) < 1e-6;
+const galleryNavOk = (await route()) === 'route-explore';
 
-// 4) Reopen welcome from the topbar; its history link opens the deep About; Esc closes.
-await page.click('[aria-label="About this explorer"]');
+// 5) History page.
+await page.click('.brand');
 await page.waitForTimeout(300);
-const welcomeReopened = await has('.welcome-scrim');
-await page.click('.welcome-history');
-await page.waitForTimeout(300);
-const aboutFromWelcome = (await has('.modal-scrim')) && !(await has('.welcome-scrim'));
-await page.keyboard.press('Escape');
-await page.waitForTimeout(300);
-const aboutClosed = !(await has('.modal-scrim'));
+await page.click('.section-more');
+await page.waitForTimeout(500);
+const historyOk = (await route()) === 'route-history' && (await has('.history-article'));
+await page.screenshot({ path: '/tmp/shot-history.png' });
 
-// 5) PNG export (no overlay now).
-let downloadName = null;
-try {
-  const [dl] = await Promise.all([
-    page.waitForEvent('download', { timeout: 12000 }),
-    page.click('[aria-label="Save image"]'),
-  ]);
-  downloadName = dl.suggestedFilename();
-} catch (e) {
-  errors.push('download: ' + e.message);
-}
+// 6) Mobile Home screenshot.
+const mob = wire(await browser.newPage({ viewport: { width: 390, height: 844 } }));
+await mob.goto(`${BASE}#/`, { waitUntil: 'load' });
+await mob.waitForTimeout(900);
+await mob.screenshot({ path: '/tmp/shot-home-mobile.png' });
 
-// 6) Mobile (fresh context → welcome shows, touch copy) + landscape screenshots.
-const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-const mob = wire(await mctx.newPage());
-await mob.goto(URL, { waitUntil: 'load' });
-await mob.waitForTimeout(1100);
-await mob.screenshot({ path: '/tmp/shot-mobile.png' });
-
-const land = wire(await browser.newPage({ viewport: { width: 844, height: 390 } }));
-await land.goto(URL, { waitUntil: 'load' });
-await land.waitForTimeout(1000);
-await land.screenshot({ path: '/tmp/shot-landscape.png' });
-
-console.log(
-  JSON.stringify(
-    {
-      env, fontsOk, panelDuplicatesBrand,
-      welcome: { welcomeShown, welcomeDismissed, welcomeReopened, aboutFromWelcome, aboutClosed },
-      tour: { m1, m2, m3, m4, tourRunning, tourContinues, tourStopped },
-      downloadName, errors,
-    },
-    null,
-    2,
-  ),
-);
+console.log(JSON.stringify({
+  env, fontsOk, faviconOk, bootFallbackRemoved,
+  home: { homeRoute, heroPresent, galleryCount, formulaCount, heroLive },
+  nav: { enteredExplorer, brandHome, presetMag, presetOk, galleryNavOk, historyOk },
+  errors,
+}, null, 2));
 await browser.close();
 
 const ok =
-  env.hasWebGL2 && fontsOk && !panelDuplicatesBrand &&
-  welcomeShown && welcomeDismissed && welcomeReopened && aboutFromWelcome && aboutClosed &&
-  tourRunning && tourContinues && tourStopped && !!downloadName && errors.length === 0;
-console.log(ok ? 'OK: welcome, tour, About, export, fonts, and rendering all verified.' : 'FAIL: see JSON above.');
+  env.hasWebGL2 && fontsOk && faviconOk && bootFallbackRemoved &&
+  homeRoute && heroPresent && galleryCount === 11 && formulaCount === 16 && heroLive &&
+  enteredExplorer && brandHome && presetOk && galleryNavOk && historyOk && errors.length === 0;
+console.log(ok ? 'OK: routing, home, gallery, formula deep-links, history, fonts all verified.' : 'FAIL: see JSON above.');
 process.exit(ok ? 0 : 1);

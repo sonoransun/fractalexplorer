@@ -44,9 +44,12 @@ const num = (p: URLSearchParams, key: string, fallback: number): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-/** Decode a hash (with or without leading '#') into a full scene, merged with defaults. */
-export const decodeScene = (hash: string): FractalScene | null => {
-  const raw = hash.startsWith('#') ? hash.slice(1) : hash;
+/** Decode a scene from a hash, an explore route (`#/explore?...`), or a bare query string. */
+export const decodeScene = (input: string): FractalScene | null => {
+  let raw = input.startsWith('#') ? input.slice(1) : input;
+  const q = raw.indexOf('?');
+  if (q >= 0) raw = raw.slice(q + 1);
+  else if (raw.startsWith('/')) return null; // a route path carrying no scene query
   if (!raw) return null;
   const p = new URLSearchParams(raw);
   if (![...p.keys()].length) return null;
@@ -92,14 +95,17 @@ export const readSceneFromURL = (): FractalScene | null => {
   }
 };
 
-/** Debounced writer — replaceState avoids flooding history during pan/zoom. */
+/**
+ * Debounced writer for the explorer. Uses replaceState (which does NOT fire
+ * `hashchange`) so live pan/zoom keeps the URL in sync without re-triggering the
+ * router. Writes under the `#/explore?` route.
+ */
 export const makeURLWriter = (delayMs = 220): ((s: FractalScene) => void) => {
   let timer = 0;
   return (s: FractalScene) => {
     clearTimeout(timer);
     timer = window.setTimeout(() => {
-      const hash = '#' + encodeScene(s);
-      history.replaceState(null, '', hash);
+      history.replaceState(null, '', '#/explore?' + encodeScene(s));
     }, delayMs);
   };
 };
