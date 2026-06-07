@@ -92,18 +92,22 @@ await page.waitForTimeout(500);
 const historyOk = (await route()) === 'route-history' && (await has('.history-article'));
 await page.screenshot({ path: '/tmp/shot-history.png' });
 
-// 6) Mobile Home screenshot.
-const mob = wire(await browser.newPage({ viewport: { width: 390, height: 844 } }));
-await mob.goto(`${BASE}#/`, { waitUntil: 'load' });
-await mob.waitForTimeout(900);
-await mob.screenshot({ path: '/tmp/shot-home-mobile.png' });
-
 console.log(JSON.stringify({
   env, fontsOk, faviconOk, bootFallbackRemoved,
   home: { homeRoute, heroPresent, galleryCount, formulaCount, heroLive },
   nav: { enteredExplorer, brandHome, presetMag, presetOk, galleryNavOk, historyOk },
   errors,
 }, null, 2));
+
+// 6) Mobile Home screenshot (best-effort; not part of pass/fail).
+try {
+  const mob = wire(await browser.newPage({ viewport: { width: 390, height: 844 } }));
+  await mob.goto(`${BASE}#/`, { waitUntil: 'load' });
+  await mob.waitForTimeout(900);
+  await mob.screenshot({ path: '/tmp/shot-home-mobile.png', animations: 'disabled', timeout: 15000 });
+} catch (e) {
+  console.log('(mobile screenshot skipped: ' + e.message.split('\n')[0] + ')');
+}
 await browser.close();
 
 const ok =

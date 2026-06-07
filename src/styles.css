@@ -1167,9 +1167,22 @@ body.route-history #grain {
   text-align: center;
   padding: 24px;
 }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(58% 52% at 50% 46%, rgba(7, 7, 10, 0.6), transparent 76%);
+  pointer-events: none;
+}
 .hero-inner {
+  position: relative;
+  z-index: 1;
   max-width: 720px;
   animation: enter 0.8s var(--ease) both;
+}
+.hero-title,
+.hero-tag {
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.55);
 }
 .hero-logo {
   width: 64px;

@@ -32,9 +32,14 @@ rendering framework. The bundle is ~14 kB gzipped.
 - **Shareable state & export** — the URL hash is the single source of truth
   ("Copy link" deep-links the exact view); plus one-click **PNG export** and Web
   Share on mobile.
-- **Guided start** — first-time visitors get a welcome overlay explaining the
-  Mandelbrot set while the view is already diving in; it links to an in-app
-  **About** with the history of fractals (long-form in [`docs/fractals.md`](docs/fractals.md)).
+- **Landing page** — the home view (`#/`) is a scrolling page over a live
+  Mandelbrot hero, with three sections: a **history** teaser (→ a dedicated
+  in-app history page, long-form in [`docs/fractals.md`](docs/fractals.md)), a
+  **gallery** of all fractal types (pre-rendered thumbnails → the live explorer),
+  and **famous formulas** — verified deep-links that open the explorer at a known
+  coordinate and depth (Seahorse Valley, the Douady Rabbit, the Feigenbaum point…).
+- **Hash routing** — `#/` home · `#/explore?…` the explorer (deep-linkable) ·
+  `#/history` the history page. No server rewrites needed.
 - **Polished, responsive UI** — an immersive dark "observatory" design; the
   control panel becomes a bottom sheet on phones; keyboard shortcuts throughout.
 
@@ -52,6 +57,22 @@ npm run e2e        # headless WebGL2 smoke test (requires Playwright + chromium)
 
 > Node 18 is supported via Vite 5. The headless `e2e` check uses Playwright
 > (`npx playwright install chromium`) and is optional.
+>
+> **Serve it — don't open the file directly.** This is an ES-module app, so a
+> `file://` open can't load its scripts (you'll get a black screen). Always use a
+> server (`npm run dev` / `npm run preview`) or a static host.
+
+## Deploy (GitHub Pages)
+
+The build is plain static files and uses **relative asset paths** (`base: './'`)
+plus **hash routing**, so it works at any Pages subpath with no extra config.
+
+- **Automatic:** the included [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
+  builds and deploys on every push to `main`. In your repo, enable
+  **Settings → Pages → Source: GitHub Actions**.
+- **Manual:** `npm run build`, then publish the `dist/` folder (e.g. to a
+  `gh-pages` branch). The gallery thumbnails in `public/thumbnails/` are committed,
+  so no GPU is needed at build time.
 
 ## Controls
 
