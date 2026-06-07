@@ -48,7 +48,7 @@ rendering framework. The bundle is ~14 kB gzipped.
 ```bash
 npm install
 npm run dev        # Vite dev server
-npm run build      # typecheck + production build to dist/
+npm run build      # typecheck + production build to docs/ (committed for Pages)
 npm run preview    # serve the production build
 npm test           # Vitest unit tests
 npm run typecheck  # tsc --noEmit
@@ -64,15 +64,18 @@ npm run e2e        # headless WebGL2 smoke test (requires Playwright + chromium)
 
 ## Deploy (GitHub Pages)
 
-The build is plain static files and uses **relative asset paths** (`base: './'`)
-plus **hash routing**, so it works at any Pages subpath with no extra config.
+The build is plain static files: Vite outputs to **`docs/`** (committed) with
+**relative asset paths** (`base: './'`) and **hash routing**, so GitHub Pages serves
+it directly from a branch — no Action or server config needed.
 
-- **Automatic:** the included [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
-  builds and deploys on every push to `main`. In your repo, enable
-  **Settings → Pages → Source: GitHub Actions**.
-- **Manual:** `npm run build`, then publish the `dist/` folder (e.g. to a
-  `gh-pages` branch). The gallery thumbnails in `public/thumbnails/` are committed,
-  so no GPU is needed at build time.
+1. `npm run build` (writes/refreshes `docs/`), then commit `docs/`.
+2. In your repo: **Settings → Pages → Build and deployment → Source: Deploy from a
+   branch → Branch: `main` `/docs`**.
+3. The site loads at `https://<user>.github.io/<repo>/`.
+
+Gallery thumbnails (`public/thumbnails/`) are committed, so no GPU is needed at build
+time. Pages serves a committed build only from the repo root or `/docs` — never a
+`/dist` subfolder — which is why the output dir is `docs/`.
 
 ## Controls
 

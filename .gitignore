@@ -1,7 +1,8 @@
 node_modules
-dist
-dist-ssr
 *.local
 .DS_Store
 .vite
 verify-shot.png
+
+# The production build is committed to docs/ for GitHub Pages
+# (Settings → Pages → Deploy from a branch → main /docs), so it is NOT ignored.

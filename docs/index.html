@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#07070a" />
+    <meta name="description" content="An immersive, hardware-accelerated explorer for the Mandelbrot set, Julia sets, and other self-similar fractals — with a history, a gallery, and famous formula deep-links." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Fractal Explorer</title>
+    <script type="module" crossorigin src="./assets/index-Bi7-Vz4f.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C8a63JFw.css">
+  </head>
+  <body>
+    <!-- film grain + vignette atmosphere -->
+    <div id="grain" aria-hidden="true"></div>
+
+    <!-- the fragment shaders draw here; the persistent backdrop for Home + Explorer -->
+    <canvas id="view" aria-label="Fractal viewport"></canvas>
+
+    <!-- explorer chrome (visible on the #/explore route) -->
+    <header id="topbar">
+      <div class="brand">
+        <span class="brand-mark">Fractal</span><span class="brand-mark brand-em">Explorer</span>
+      </div>
+      <nav id="topbar-actions" class="topbar-actions" aria-label="Actions"></nav>
+    </header>
+    <aside id="panel" aria-label="Controls"></aside>
+    <button id="panel-toggle" type="button" aria-label="Show controls" title="Controls">
+      <span class="dotgrid" aria-hidden="true"></span>
+    </button>
+    <div id="hud" role="status" aria-live="off"></div>
+    <div id="toast-root" aria-live="polite"></div>
+
+    <!-- landing (visible on the #/ route) -->
+    <main id="home" aria-label="Home"></main>
+    <!-- long-form history (visible on the #/history route) -->
+    <main id="history" aria-label="History of fractals"></main>
+
+    <!-- shown only if the app never boots (e.g. opened from the filesystem) -->
+    <div id="boot-fallback">
+      <div class="bf-card">
+        <h1>Fractal Explorer</h1>
+        <p>
+          This page needs to be served over HTTP. Run <code>npm run dev</code> (or
+          <code>npm run build &amp;&amp; npm run preview</code>) and open the printed
+          <code>localhost</code> address — opening the HTML file directly can't load its modules.
+        </p>
+      </div>
+    </div>
+
+  </body>
+</html>
