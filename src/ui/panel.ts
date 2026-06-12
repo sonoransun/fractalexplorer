@@ -10,6 +10,7 @@ import { linearToSrgb } from '../color/oklab';
 import { encodeScene } from '../state/urlstate';
 import { clamp } from '../util/math';
 import { toast } from './toast';
+import { ICONS } from './icons';
 
 const DESCRIPTORS: Record<FractalKind, string> = {
   mandelbrot: 'The map of every Julia set — z → z² + c.',
@@ -40,7 +41,7 @@ export interface PanelHandle {
   rebuild(): void;
 }
 
-export const createPanel = (engine: Engine, onChange: () => void): PanelHandle => {
+export const createPanel = (engine: Engine, onChange: () => void, onMinimize: () => void): PanelHandle => {
   const root = document.getElementById('panel') as HTMLElement;
 
   let sectionIndex = 0;
@@ -207,10 +208,18 @@ export const createPanel = (engine: Engine, onChange: () => void): PanelHandle =
     root.innerHTML = '';
     sectionIndex = 0;
 
-    // Slim context line (the topbar already carries the wordmark).
+    // Slim context line (the topbar already carries the wordmark) + minimize.
     const ctx = document.createElement('div');
     ctx.className = 'panel-context';
-    ctx.innerHTML = `<span class="ctx-name">${META_BY_KIND[s.kind].name}</span><span class="ctx-desc">${DESCRIPTORS[s.kind]}</span>`;
+    ctx.innerHTML = `<div class="ctx-text"><span class="ctx-name">${META_BY_KIND[s.kind].name}</span><span class="ctx-desc">${DESCRIPTORS[s.kind]}</span></div>`;
+    const minBtn = document.createElement('button');
+    minBtn.type = 'button';
+    minBtn.className = 'panel-min';
+    minBtn.setAttribute('aria-label', 'Minimize controls');
+    minBtn.title = 'Minimize (Tab)';
+    minBtn.innerHTML = ICONS.minimize;
+    minBtn.addEventListener('click', onMinimize);
+    ctx.appendChild(minBtn);
     root.appendChild(ctx);
 
     // --- Fractal ---

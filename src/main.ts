@@ -57,6 +57,8 @@ const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
 let currentRoute: RouteName = 'home';
 let panel: PanelHandle | null = null;
 let topbar: TopbarHandle | null = null;
+let armAutoMinimize: (() => void) | null = null;
+let cancelAutoMinimize: (() => void) | null = null;
 
 if (!engine.ok) {
   hud.style.display = 'none';
@@ -100,7 +102,57 @@ if (!engine.ok) {
     else void document.documentElement.requestFullscreen();
   };
 
-  panel = createPanel(engine, onChange);
+  // Panel show/hide (Tab, the floating toggle, the in-panel minimize button).
+  const setPanelHidden = (hidden: boolean) => {
+    // strip the auto-minimize pulse: a display:none->grid flip would replay it
+    toggle.classList.remove('pulse');
+    panelEl.classList.toggle('hidden', hidden);
+    toggle.classList.toggle('show', hidden);
+    toggle.setAttribute('aria-label', hidden ? 'Show controls' : 'Hide controls');
+    toggle.setAttribute('aria-expanded', String(!hidden));
+  };
+
+  // Auto-minimize: each arrival on #/explore shows the panel, then tucks it away
+  // after 3s unless the user touches the panel first (canvas use doesn't cancel).
+  let autoMinTimer = 0;
+  const cancelAutoMin = () => {
+    if (autoMinTimer) {
+      window.clearTimeout(autoMinTimer);
+      autoMinTimer = 0;
+    }
+  };
+  const armAutoMin = () => {
+    cancelAutoMin();
+    setPanelHidden(false);
+    autoMinTimer = window.setTimeout(() => {
+      autoMinTimer = 0;
+      if (currentRoute !== 'explore') return;
+      setPanelHidden(true);
+      toggle.classList.add('pulse');
+    }, 3000);
+  };
+  armAutoMinimize = armAutoMin;
+  cancelAutoMinimize = cancelAutoMin;
+  panelEl.addEventListener('pointerdown', cancelAutoMin);
+  panelEl.addEventListener('pointerenter', cancelAutoMin);
+  panelEl.addEventListener('focusin', cancelAutoMin);
+  toggle.addEventListener('click', () => {
+    cancelAutoMin();
+    setPanelHidden(!panelEl.classList.contains('hidden'));
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && currentRoute === 'explore' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLSelectElement)) {
+      e.preventDefault();
+      cancelAutoMin();
+      setPanelHidden(!panelEl.classList.contains('hidden'));
+    }
+  });
+
+  panel = createPanel(engine, onChange, () => {
+    cancelAutoMin();
+    setPanelHidden(true);
+    toggle.focus(); // hand keyboard focus to the re-expand control
+  });
   const toggleTour = () => {
     if (engine.tourActive) engine.stopTour();
     else {
@@ -162,20 +214,6 @@ if (!engine.ok) {
   watchDpr();
   doResize();
 
-  // Panel show/hide (Tab, or the floating toggle on mobile / when hidden).
-  const setPanelHidden = (hidden: boolean) => {
-    panelEl.classList.toggle('hidden', hidden);
-    toggle.classList.toggle('show', hidden);
-    toggle.setAttribute('aria-label', hidden ? 'Show controls' : 'Hide controls');
-  };
-  toggle.addEventListener('click', () => setPanelHidden(!panelEl.classList.contains('hidden')));
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab' && currentRoute === 'explore' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLSelectElement)) {
-      e.preventDefault();
-      setPanelHidden(!panelEl.classList.contains('hidden'));
-    }
-  });
-
   // HUD readout + keep the Tour button in sync (interaction can cancel the tour).
   const updateHud = () => {
     if (currentRoute !== 'explore') return;
@@ -207,8 +245,10 @@ const applyRoute = () => {
       }
       panel?.rebuild();
       topbar?.setTourActive(engine.tourActive);
-    } else if (r.name === 'home') {
-      if (!engine.tourActive && !reduceMq.matches) {
+      armAutoMinimize?.();
+    } else {
+      cancelAutoMinimize?.();
+      if (r.name === 'home' && !engine.tourActive && !reduceMq.matches) {
         engine.startTour();
         topbar?.setTourActive(true);
       }

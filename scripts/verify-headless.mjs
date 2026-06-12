@@ -62,11 +62,25 @@ const heroLive = await page.evaluate(() => new Promise((resolve) => {
 }));
 await page.screenshot({ path: '/tmp/shot-home.png' });
 
-// 2) Hero CTA -> Explorer (chrome appears).
+// 2) Hero CTA -> Explorer (chrome appears, panel starts visible).
 await page.click('.hero-cta');
+const panelShownOnArrival = await page.evaluate(() => !document.getElementById('panel').classList.contains('hidden'));
 await page.waitForTimeout(700);
 const enteredExplorer = (await route()) === 'route-explore' && (await page.locator('#topbar').isVisible());
 await page.screenshot({ path: '/tmp/shot-explorer.png' });
+
+// 2b) Panel auto-minimizes ~3s after arrival (computed opacity, so a CSS
+// fill-mode regression can't pin it visible); the floating toggle re-expands.
+await page.waitForTimeout(3300); // 3s timer + 0.3s hide transition + slack
+const panelAutoHid = await page.evaluate(() => {
+  const p = document.getElementById('panel');
+  return p.classList.contains('hidden') &&
+    parseFloat(getComputedStyle(p).opacity) < 0.05 &&
+    document.getElementById('panel-toggle').classList.contains('show');
+});
+await page.click('#panel-toggle');
+await page.waitForTimeout(450);
+const panelReExpanded = await page.evaluate(() => !document.getElementById('panel').classList.contains('hidden'));
 
 // 3) Brand -> Home, then a formula deep-link lands on the right magnification.
 await page.click('.brand');
@@ -95,7 +109,7 @@ await page.screenshot({ path: '/tmp/shot-history.png' });
 console.log(JSON.stringify({
   env, fontsOk, faviconOk, bootFallbackRemoved,
   home: { homeRoute, heroPresent, galleryCount, formulaCount, heroLive },
-  nav: { enteredExplorer, brandHome, presetMag, presetOk, galleryNavOk, historyOk },
+  nav: { enteredExplorer, panelShownOnArrival, panelAutoHid, panelReExpanded, brandHome, presetMag, presetOk, galleryNavOk, historyOk },
   errors,
 }, null, 2));
 
@@ -113,6 +127,6 @@ await browser.close();
 const ok =
   env.hasWebGL2 && fontsOk && faviconOk && bootFallbackRemoved &&
   homeRoute && heroPresent && galleryCount === 11 && formulaCount === 16 && heroLive &&
-  enteredExplorer && brandHome && presetOk && galleryNavOk && historyOk && errors.length === 0;
+  enteredExplorer && panelShownOnArrival && panelAutoHid && panelReExpanded && brandHome && presetOk && galleryNavOk && historyOk && errors.length === 0;
 console.log(ok ? 'OK: routing, home, gallery, formula deep-links, history, fonts all verified.' : 'FAIL: see JSON above.');
 process.exit(ok ? 0 : 1);

@@ -229,7 +229,7 @@ body {
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
   box-shadow: var(--shadow);
-  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease), visibility 0s;
   scrollbar-width: thin;
   scrollbar-color: var(--hair-strong) transparent;
 }
@@ -244,6 +244,9 @@ body {
   opacity: 0;
   pointer-events: none;
   transform: translateX(16px) scale(0.98);
+  /* leave the tab order / a11y tree once the exit transition finishes */
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease), visibility 0s 0.3s;
 }
 
 .panel-section {
@@ -538,6 +541,13 @@ button.btn:hover {
 }
 #panel-toggle.show {
   display: grid;
+}
+#panel-toggle.pulse {
+  animation: fab-pulse 0.9s var(--ease) 1;
+}
+@keyframes fab-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(242, 179, 94, 0.45), var(--shadow); }
+  100% { box-shadow: 0 0 0 16px rgba(242, 179, 94, 0), var(--shadow); }
 }
 .dotgrid {
   width: 16px;
@@ -879,7 +889,9 @@ button.btn:hover {
 #topbar,
 #panel,
 #hud {
-  animation: enter 0.6s var(--ease) both;
+  /* `backwards` (not `both`): a finished fill-forwards animation would pin
+     opacity/transform at animation priority and block #panel.hidden's transition */
+  animation: enter 0.6s var(--ease) backwards;
 }
 #panel {
   animation-delay: 0.08s;
@@ -935,7 +947,7 @@ button.btn:hover {
   .swatch.active {
     animation: none;
   }
-  #topbar, #panel, #hud, .toast, .modal, .modal-scrim { animation: none; }
+  #topbar, #panel, #hud, #panel-toggle.pulse, .toast, .modal, .modal-scrim { animation: none; }
   .welcome-scrim { animation: none; opacity: 1; }
   .welcome-card { animation: none; transform: none; }
 }
@@ -947,6 +959,42 @@ button.btn:hover {
 /* slim in-panel context line (replaces the redundant brand header) */
 .panel-context {
   padding: 14px 2px 4px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ctx-text {
+  min-width: 0;
+}
+.panel-min {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.panel-min:hover {
+  color: var(--amber);
+  border-color: var(--hair-strong);
+  background: var(--amber-soft);
+}
+.panel-min:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+.panel-min svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 .ctx-name {
   display: block;
